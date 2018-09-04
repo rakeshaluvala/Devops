@@ -1,0 +1,59 @@
+#!/bin/bash
+S1=200;
+url="https://www.google.com"
+mail_to="rakh0919@gmail.com"
+curl -ivk -s -w 'Total: %{time_total}\n' $url > curl_status.txt
+HTTPResponse=`cat curl_status.txt  | grep HTTP/1.1 | awk '{print $2}'`
+ProcessTime=`cat curl_status.txt  | grep "Total:" | awk '{print $2}'`
+if [ "$S1" = "$HTTPResponse" ]; then
+TestResult="Pass";
+            else
+TestResult="Fail";
+            fi
+(
+cat << EOT
+Subject: Service Status Report
+FROM: Scheduled Script
+To: $mail_to
+content-type: text/html
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td, th {
+    border: 1px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+</style>
+</head>
+<body>
+<table>
+  <tr>
+    <th>Service</th>
+    <th>Test Result</th>
+    <th>HTTP Response</th>
+    <th>Process Time (in Second)</th>
+  </tr>
+  <tr>
+    <td>$(echo $url)</td>
+    <td>$(echo $TestResult)</td>
+    <td>$(echo $HTTPResponse)</td>
+    <td>$(echo $ProcessTime)</td>
+  </tr>
+</table>
+
+</body>
+</html>
+EOT
+) | /usr/sbin/sendmail "$mail_to"
